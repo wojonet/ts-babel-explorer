@@ -1,0 +1,25 @@
+{
+  "name": "ast-explorer-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local Babel plugin playground for TypeScript AST transforms",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "transform": "npm run build && node scripts/run-transform.cjs",
+    "dev": "node scripts/dev-watch.cjs",
+    "debug:transform": "npm run build && node --enable-source-maps scripts/run-transform.cjs",
+    "debug:dev": "node --enable-source-maps scripts/dev-watch.cjs"
+  },
+  "dependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-typescript": "^7.28.0",
+    "@babel/types": "^7.28.0"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^24.0.0",
+    "chokidar": "^4.0.3",
+    "typescript": "^5.8.0"
+  }
+}
