@@ -1,32 +1,61 @@
-import type { PluginObj } from "@babel/core";
-import type { NodePath } from "@babel/core";
-import * as t from "@babel/types";
+import type { PluginObj } from '@babel/core'
+import type { NodePath } from '@babel/core'
+import * as t from '@babel/types'
 
-function isConsoleLog(path: NodePath<t.CallExpression>): boolean {
-  const callee = path.node.callee;
-  return (
-    t.isMemberExpression(callee) &&
-    t.isIdentifier(callee.object, { name: "console" }) &&
-    t.isIdentifier(callee.property, { name: "log" })
-  );
+type IdentifierMeta = {
+  pure: boolean
+  reason?: string
 }
 
-const plugin: PluginObj = {
-  name: "ast-explorer-local-plugin",
-  visitor: {
-    Identifier(path) {
-      if (path.node.name === "x") {
-        path.node.name = "transformedX";
-      }
-    },
-    CallExpression(path) {
-      if (!isConsoleLog(path)) {
-        return;
-      }
+function isPureByComment(path: NodePath<t.Identifier>): boolean {
+  return !!path.node.leadingComments?.some(comment => comment.value.trim() === 'pure')
+}
 
-      path.node.arguments.unshift(t.stringLiteral("[plugin]"));
-    },
-  },
-};
+const plugin = (): PluginObj => {
+  const identifierMeta = new WeakMap<t.Identifier, IdentifierMeta>()
 
-export default plugin;
+  return {
+    name: 'ast-explorer-local-plugin',
+    visitor: {
+      Identifier(path) {
+        const pure = path.isPure() || isPureByComment(path)
+        const originalName = path.node.name
+
+        path.node.name = pure ? 'pure' : 'impure'
+        identifierMeta.set(path.node, {
+          pure,
+          reason: `renamed-from-${originalName}`,
+        })
+      },
+      ArrowFunctionExpression(path) {
+        path.node.params.forEach(param => {
+          if (t.isIdentifier(param)) {
+            identifierMeta.set(param, {
+              pure: true,
+              reason: 'parameter-of-arrow-function',
+            })
+          }
+        })
+
+        path.traverse({
+          MemberExpression(innerPath) {
+            if (!t.isIdentifier(innerPath.node.object)) {
+              return
+            }
+
+            const meta = identifierMeta.get(innerPath.node.object)
+            if (meta?.pure) {
+              // Mark the member expression as pure if the object is pure
+              identifierMeta.set(innerPath.node, {
+                pure: true,
+                reason: `member-of-${innerPath.node.object.name}`,
+              })
+            }
+          },
+        })
+      },
+    },
+  }
+}
+
+export default plugin

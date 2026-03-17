@@ -1,11 +1,7 @@
-type User = {
-  id: number;
-  name: string;
-};
+const q: number = 5
 
-const x: number = 99;
-const user: User = { id: x + 1, name: "Ada" };
+const y = {
+  id: 3,
+}
 
-console.log(user.name, x);
-
-console.log("This is a ssstf ST plugin transformation.");
+const fn = (x: any) => x.id === q
