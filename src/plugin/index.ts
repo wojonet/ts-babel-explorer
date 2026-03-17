@@ -21,7 +21,7 @@ const plugin = (): PluginObj => {
         const pure = path.isPure() || isPureByComment(path)
         const originalName = path.node.name
 
-        path.node.name = pure ? 'pure' : 'impure'
+        path.node.name = 'pure-member' === path.node.name ? 'pure-member' : pure ? 'pure' : 'impure'
         identifierMeta.set(path.node, {
           pure,
           reason: `renamed-from-${originalName}`,
@@ -44,13 +44,25 @@ const plugin = (): PluginObj => {
             }
 
             const meta = identifierMeta.get(innerPath.node.object)
-            if (meta?.pure) {
-              // Mark the member expression as pure if the object is pure
-              identifierMeta.set(innerPath.node, {
+            // get binding information to determine if it's pure
+            const binding = innerPath.scope.getBinding(innerPath.node.object.name)
+            if (binding && binding.constant) {
+              identifierMeta.set(innerPath.node.object, {
                 pure: true,
-                reason: `member-of-${innerPath.node.object.name}`,
+                reason: `constant-binding-${innerPath.node.object.name}`,
+              })
+              innerPath.traverse({
+                Identifier(idPath) {
+                  if (idPath.key === 'property') {
+                    idPath.node.name = 'pure-member'
+                  }
+                },
               })
             }
+
+            // if (meta?.pure) {
+            //   innerPath.node.object.name = 'pure-member'
+            // }
           },
         })
       },
