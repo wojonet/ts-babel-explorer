@@ -18,14 +18,24 @@ const plugin = (): PluginObj => {
     name: 'ast-explorer-local-plugin',
     visitor: {
       Identifier(path) {
-        const pure = path.isPure() || isPureByComment(path)
+        const pure = path.isPure()
         const originalName = path.node.name
 
-        path.node.name = 'pure-member' === path.node.name ? 'pure-member' : pure ? 'pure' : 'impure'
+        path.node.name =
+          'pureMember' === path.node.name ? 'pureMember' : pure ? `${path.node.name}Pure` : `${path.node.name}Impure`
         identifierMeta.set(path.node, {
           pure,
           reason: `renamed-from-${originalName}`,
         })
+      },
+      FunctionDeclaration(path) {
+        const s = 's'
+      },
+      BinaryExpression(path) {
+        const s = 's'
+      },
+      ReturnStatement(path) {
+        const s = 's'
       },
       ArrowFunctionExpression(path) {
         path.node.params.forEach(param => {
@@ -54,7 +64,7 @@ const plugin = (): PluginObj => {
               innerPath.traverse({
                 Identifier(idPath) {
                   if (idPath.key === 'property') {
-                    idPath.node.name = 'pure-member'
+                    idPath.node.name = `pureMember`
                   }
                 },
               })

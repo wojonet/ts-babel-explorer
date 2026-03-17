@@ -6,4 +6,12 @@ const y = {
   },
 }
 
-const fn = (x: any) => x.id === q
+function aFun() {
+  return Math.random()
+}
+
+const getty = (userId: number) => {
+  userId = 10
+  const fn = (x: any) => x.id === aFun()
+  return fn(userId)
+}
